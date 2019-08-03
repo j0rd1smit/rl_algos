@@ -1,0 +1,22 @@
+name: rl_algos
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - tqdm
+  - numpy
+  - scipy
+  - matplotlib
+  - mypy
+  - pystan
+  - swig
+  - git
+  - pip
+  - pip:
+      - gym
+      - git+https://github.com/Kojoley/atari-py.git
+      - box2d-py
+      - gym[all]
+      - pyglet
+      - gym[box2d]
+      - tensorflow-gpu==2.0.0-beta1
