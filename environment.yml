@@ -17,6 +17,6 @@ dependencies:
       - git+https://github.com/Kojoley/atari-py.git
       - box2d-py
       - gym[all]
-      - pyglet
+      - pyglet==1.3.2
       - gym[box2d]
       - tensorflow-gpu==2.0.0-beta1
