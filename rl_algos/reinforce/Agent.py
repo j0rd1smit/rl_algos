@@ -1,7 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import List, Set, Dict, Tuple, Optional, Union, Any, cast
-import tensorflow as tf
+from typing import cast
+
 import numpy as np
+import tensorflow as tf
+
+from rl_algos.utils.type_utils import TfFunctionType
 
 
 class Agent(object):
@@ -14,12 +16,10 @@ class Agent(object):
         self.config = config
         self.optimizer = tf.keras.optimizers.Adam(lr=config.lr)
 
-
-    def select_action(self, obs: np.ndarray) -> np.ndarray:
+    def select_action(self, obs: np.ndarray[float]) -> np.ndarray:
         return self._select_action(obs).numpy()
 
-    # noinspection Mypy
-    @tf.function
+    @cast(TfFunctionType, tf.function)
     def _select_action(self, obs: np.ndarray) -> tf.Tensor:
         _, pi = self.model(obs)
         return tf.random.categorical(pi, 1)
@@ -27,8 +27,7 @@ class Agent(object):
     def training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
         self._training_step(states, actions, returns)
 
-    # noinspection Mypy
-    @tf.function
+    @cast(TfFunctionType, tf.function)
     def _training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
         with tf.GradientTape() as tape:
             v, pi = self.model(states)

@@ -1,8 +1,8 @@
 from typing import Tuple
 
-import tensorflow as tf
-import numpy as np
 import gym
+import numpy as np
+import tensorflow as tf
 import tqdm
 
 from rl_algos.reinforce.Agent import Agent, AgentConfig
