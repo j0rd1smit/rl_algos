@@ -16,7 +16,7 @@ class Agent(object):
         self.config = config
         self.optimizer = tf.keras.optimizers.Adam(lr=config.lr)
 
-    def select_action(self, obs: np.ndarray[float]) -> np.ndarray:
+    def select_action(self, obs: np.ndarray) -> np.ndarray:
         return self._select_action(obs).numpy()
 
     @cast(TfFunctionType, tf.function)
