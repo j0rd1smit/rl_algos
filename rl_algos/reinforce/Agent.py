@@ -36,6 +36,9 @@ class Agent(object):
 
     @cast(TfFunctionType, tf.function)
     def _training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
+        if self.config.base_line:
+            returns = returns - tf.reduce_mean(returns)
+
         if self.value_model is not None:
             with tf.GradientTape() as tape:
                 base = self.base_model(states)
@@ -62,13 +65,11 @@ class Agent(object):
             else:
                 targets = returns
 
-            J = tf.reduce_mean(log_policy_for_actions * tf.stop_gradient(targets))
-
             # entropy per example
-            entropy = tf.reduce_sum(policy * log_policy, axis=1, name="entropy")
-            entropy = tf.reduce_mean(entropy)
+            actor_loss = -tf.reduce_mean(log_policy_for_actions * tf.stop_gradient(targets))
+            entropy_per_observation = tf.reduce_sum(policy * log_policy, axis=1, name="entropy")
 
-            loss = -J + 0.1 * entropy
+            loss = actor_loss - self.config.entropy_weight * entropy_per_observation
 
         policy_variables = self.base_model.trainable_variables + self.policy_model.trainable_variables
         gradients = tape.gradient(loss, policy_variables)
@@ -83,7 +84,9 @@ class AgentConfig(object):
             lr: float = 1e-3,
             batch_size: int = 32,
             base_line: bool = True,
+            entropy_weight: float = 0.1,
     ) -> None:
         self.lr = lr
         self.batch_size = batch_size
         self.base_line = base_line
+        self.entropy_weight = entropy_weight

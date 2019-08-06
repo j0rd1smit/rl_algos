@@ -16,14 +16,15 @@ def main() -> None:
 
     env = gym.make("CartPole-v1")
     config = AgentConfig()
+    config.base_line = True
 
 
     shape = env.observation_space.shape
     n_actions = env.action_space.n
     base_model = build_base_model(shape)
     policy_model = build_policy_model(base_output_shape, n_actions)
-    value_model = build_value_model(base_output_shape)
-    # value_model =  None
+    # value_model = build_value_model(base_output_shape)
+    value_model = None
     agent = Agent(config, base_model, policy_model, value_model)
 
     total_rewards = []
