@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -9,19 +9,26 @@ from rl_algos.utils.type_utils import TfFunctionType
 class Agent(object):
     def __init__(
             self,
-            model: tf.keras.Model,
             config: "AgentConfig",
+            base_model: tf.keras.Model,
+            policy_model: tf.keras.Model,
+            value_model: Optional[tf.keras.Model] = None,
+
     ) -> None:
-        self.model = model
         self.config = config
+        self.base_model = base_model
+        self.policy_model = policy_model
+        self.value_model = value_model
         self.optimizer = tf.keras.optimizers.Adam(lr=config.lr)
+        self.value_optimizer = tf.keras.optimizers.Adam(lr=config.lr)
 
     def select_action(self, obs: np.ndarray) -> np.ndarray:
         return self._select_action(obs).numpy()
 
     @cast(TfFunctionType, tf.function)
     def _select_action(self, obs: np.ndarray) -> tf.Tensor:
-        _, pi = self.model(obs)
+        base = self.base_model(obs)
+        pi = self.policy_model(base)
         return tf.random.categorical(pi, 1)
 
     def training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
@@ -29,20 +36,45 @@ class Agent(object):
 
     @cast(TfFunctionType, tf.function)
     def _training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
+        if self.value_model is not None:
+            with tf.GradientTape() as tape:
+                base = self.base_model(states)
+                v = self.value_model(base)
+                v_loss = tf.reduce_mean(tf.keras.losses.mean_squared_error(y_true=returns, y_pred=v))
+
+            value_variable = self.base_model.trainable_variables + self.value_model.trainable_variables
+            gradients = tape.gradient(v_loss, value_variable)
+            self.value_optimizer.apply_gradients(zip(gradients, value_variable))
+
         with tf.GradientTape() as tape:
-            v, pi = self.model(states)
+            base = self.base_model(states)
+            logits = self.policy_model(base)
 
-            target = returns - v
-            pi_loss = tf.reduce_mean(target * tf.keras.losses.sparse_categorical_crossentropy(actions, pi, from_logits=True))
+            policy = tf.nn.softmax(logits)
+            log_policy = tf.nn.log_softmax(logits)
 
-            value_loss = tf.reduce_mean(tf.keras.losses.MSE(returns, v))
+            indices = tf.stack([tf.range(tf.shape(log_policy)[0]), actions], axis=-1)
+            log_policy_for_actions = tf.gather_nd(log_policy, indices)
 
-            entroy = -tf.reduce_mean(tf.nn.softmax(pi) * tf.nn.log_softmax(pi))
-            loss = pi_loss + value_loss + 0.1 * entroy
+            if self.value_model is not None:
+                v = self.value_model(base)
+                targets = returns - v
+            else:
+                targets = returns
+
+            J = tf.reduce_mean(log_policy_for_actions * tf.stop_gradient(targets))
+
+            # entropy per example
+            entropy = tf.reduce_sum(policy * log_policy, axis=1, name="entropy")
+            entropy = tf.reduce_mean(entropy)
+
+            loss = -J + 0.1 * entropy
+
+        policy_variables = self.base_model.trainable_variables + self.policy_model.trainable_variables
+        gradients = tape.gradient(loss, policy_variables)
+        self.optimizer.apply_gradients(zip(gradients, policy_variables))
 
 
-        gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
 
 
 class AgentConfig(object):
