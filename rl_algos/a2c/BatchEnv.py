@@ -18,7 +18,7 @@ class BatchEnv(object):
     def __init__(
             self,
             envs: List[gym.Env],
-            pool_size: int = 8
+            pool_size: int = 4
     ) -> None:
         self._envs = envs
         self._pool = ThreadPool(pool_size)
@@ -33,6 +33,10 @@ class BatchEnv(object):
 
         return new_obs.astype(np.float32), rewards.astype(np.float32), done, list(info)
 
+
+# TODO create worker that keeps track of local env state
+# such that it can return 0 rewards if has done
+# also requires release state method to allow restarts
 
 
 
