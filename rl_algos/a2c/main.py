@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import gym
 import numpy as np
@@ -10,13 +10,15 @@ from rl_algos.a2c.BatchEnv import BatchEnv
 
 
 def main() -> None:
-    n_envs = 128
+    n_envs = 256
     n_training_steps = 10000
+    n_steps = 3
     n_demo_step = 5000
-    print_every_n_steps = 1000
+    print_every_n_steps = 250
     config = Config()
 
     env_name = "CartPole-v1"
+
     test_env = gym.make(env_name)
     envs = [gym.make(env_name) for _ in range(n_envs)]
     batch_env = BatchEnv(envs)
@@ -76,6 +78,25 @@ def build_model(shape: Tuple[int], n_actions: int) -> tf.keras.Model:
     model = tf.keras.Model(inputs=inputs, outputs=[v, pi])
     return model
 
+
+def agragate_rewards(gamma: float, rewards: List[np.ndarray], dones: List[np.ndarray]) -> np.ndarray:
+    result = np.zeros_like(rewards[0])
+    rewards = np.array(rewards)
+    mask = np.ones_like(rewards)
+
+    for j in range(mask.shape[1]):
+        has_is_done = False
+        for i in range(mask.shape[0]):
+            if has_is_done:
+                mask[i][j] = 0
+            if dones[i][j]:
+                has_is_done = True
+
+    rewards = rewards * mask
+    for reward in reversed(rewards):
+        result = reward + gamma * result
+
+    return result
 
 if __name__ == '__main__':
     main()
