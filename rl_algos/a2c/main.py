@@ -10,12 +10,13 @@ from rl_algos.a2c.BatchEnv import BatchEnv
 
 
 def main() -> None:
-    n_envs = 256
-    n_training_steps = 10000
+    n_envs = 512
+    n_training_steps = 4000
     n_steps = 3
     n_demo_step = 5000
     print_every_n_steps = 250
     config = Config()
+    assert n_steps > 0
 
     env_name = "CartPole-v1"
 
@@ -30,10 +31,16 @@ def main() -> None:
 
     states = batch_env.reset()
     for i in tqdm.trange(n_training_steps):
-        actions = agent.select_actions(states)
-        next_states, rewards, dones, _ = batch_env.step(actions)
-
-        agent.training_step(states, rewards, actions, dones, next_states)
+        start_states = states
+        n_step_rewards = []
+        for _ in range(n_steps):
+            actions = agent.select_actions(states)
+            next_states, rewards, dones = batch_env.step(actions)
+            n_step_rewards.append(rewards)
+        batch_env.allow_reset_after_step()
+        rewards = agragate_rewards(config.gamma, n_step_rewards)
+        # noinspection PyUnboundLocalVariable
+        agent.training_step(start_states, rewards, actions, dones, next_states)
         states = next_states
 
         if (i + 1) % print_every_n_steps == 0:
@@ -79,20 +86,8 @@ def build_model(shape: Tuple[int], n_actions: int) -> tf.keras.Model:
     return model
 
 
-def agragate_rewards(gamma: float, rewards: List[np.ndarray], dones: List[np.ndarray]) -> np.ndarray:
+def agragate_rewards(gamma: float, rewards: List[np.ndarray]) -> np.ndarray:
     result = np.zeros_like(rewards[0])
-    rewards = np.array(rewards)
-    mask = np.ones_like(rewards)
-
-    for j in range(mask.shape[1]):
-        has_is_done = False
-        for i in range(mask.shape[0]):
-            if has_is_done:
-                mask[i][j] = 0
-            if dones[i][j]:
-                has_is_done = True
-
-    rewards = rewards * mask
     for reward in reversed(rewards):
         result = reward + gamma * result
 

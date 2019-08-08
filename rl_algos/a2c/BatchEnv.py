@@ -1,17 +1,8 @@
 from multiprocessing.dummy import Pool as ThreadPool
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import gym
 import numpy as np
-
-
-def _step_single_env(data: Tuple[gym.Env, np.ndarray]) -> Tuple[np.ndarray, float, bool, Dict]:
-    env, action = data
-    s, r, done, info = env.step(action[0])
-    if done:
-        s = env.reset()
-
-    return s, r, done, info
 
 
 class BatchEnv(object):
@@ -20,32 +11,52 @@ class BatchEnv(object):
             envs: List[gym.Env],
             pool_size: int = 4
     ) -> None:
-        self._envs = envs
+        self._workers = [_Worker(env) for env in envs]
         self._pool = ThreadPool(pool_size)
 
     def reset(self) -> np.ndarray:
-        return np.array([env.reset() for env in self._envs]).astype(np.float32)
+        return np.array([worker.reset() for worker in self._workers]).astype(np.float32)
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
-        actions_per_env = zip(self._envs, actions)
-        stepped_envs = self._pool.map(_step_single_env, actions_per_env)
-        new_obs, rewards, done, info = (map(np.array, zip(*stepped_envs)))
+    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        actions_per_env = zip(self._workers, actions)
+        stepped_envs = self._pool.map(lambda worker_actions: worker_actions[0].step(worker_actions[1]), actions_per_env)
+        new_obs, rewards, done = (map(np.array, zip(*stepped_envs)))
 
-        return new_obs.astype(np.float32), rewards.astype(np.float32), done, list(info)
+        return new_obs.astype(np.float32), rewards.astype(np.float32), done
 
-
-# TODO create worker that keeps track of local env state
-# such that it can return 0 rewards if has done
-# also requires release state method to allow restarts
-
+    def allow_reset_after_step(self) -> None:
+        for worker in self._workers:
+            worker.allow_reset_after_step()
 
 
-if __name__ == '__main__':
-    n_envs = 64
-    envs = [gym.make("CartPole-v1") for _ in range(n_envs)]
-    batch_env = BatchEnv(envs)
-    _ = batch_env.reset()
+class _Worker(object):
+    def __init__(
+            self,
+            env: gym.Env,
+    ) -> None:
+        self._env = env
+        self._is_done = False
+        self._next_starting_state = np.zeros_like(self._env.observation_space.shape)
 
-    for _ in range(100):
-        actions = np.array([[env.action_space.sample()] for env in envs])
-        _, _, _, _ = batch_env.step(actions)
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool]:
+        if not self._is_done:
+            s, r, done, _ = self._env.step(action[0])
+            self._is_done = done
+            if done:
+                self._next_starting_state = self._env.reset()
+        else:
+            s = self._next_starting_state
+            r = 0
+            done = True
+
+        return s, r, done
+
+    def reset(self) -> np.ndarray:
+        s = self._env.reset()
+        self._is_done = False
+
+        return s
+
+    def allow_reset_after_step(self) -> None:
+        if self._is_done:
+            self._is_done = False
