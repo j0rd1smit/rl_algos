@@ -10,12 +10,14 @@ from rl_algos.a2c.BatchEnv import BatchEnv
 
 
 def main() -> None:
-    n_envs = 512
+    n_envs = 1024
     n_training_steps = 4000
     n_steps = 3
     n_demo_step = 5000
+    gamma = 0.99
     print_every_n_steps = 250
     config = Config()
+    config.gamma = gamma ** n_steps
     assert n_steps > 0
 
     env_name = "CartPole-v1"
@@ -38,7 +40,7 @@ def main() -> None:
             next_states, rewards, dones = batch_env.step(actions)
             n_step_rewards.append(rewards)
         batch_env.allow_reset_after_step()
-        rewards = agragate_rewards(config.gamma, n_step_rewards)
+        rewards = agragate_rewards(gamma, n_step_rewards)
         # noinspection PyUnboundLocalVariable
         agent.training_step(start_states, rewards, actions, dones, next_states)
         states = next_states
