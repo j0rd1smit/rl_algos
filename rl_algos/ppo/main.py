@@ -27,6 +27,8 @@ def main() -> None:
     n_actions = env.action_space.n
     action_shape = (1, )
 
+    writer = tf.summary.create_file_writer("./tmp/ppo")
+
 
 
     bufffer = PPOBuffer(env_shape, action_shape, gamma, lamd, buffer_size)
@@ -36,8 +38,8 @@ def main() -> None:
     actor = actor_network(base_output_shape, n_actions)
     critic = critic_network(base_output_shape)
 
-    agent = PPOAgent(base, actor, critic, agent_config)
-    ppo = PPO(ppo_config, agent, bufffer, env, render=True)
+    agent = PPOAgent(base, actor, critic, agent_config, writer)
+    ppo = PPO(ppo_config, agent, bufffer, env, writer, render=True)
 
     ppo.train(epochs)
 

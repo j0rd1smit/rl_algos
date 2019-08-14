@@ -15,6 +15,7 @@ class PPOAgent(object):
             actor_model: tf.keras.Model,
             value_model: tf.keras.Model,
             config: "Config",
+            writer: tf.summary.SummaryWriter,
     ) -> None:
         self._base_model = base_model
         self._actor_model = actor_model
@@ -22,6 +23,8 @@ class PPOAgent(object):
         self._config = config
         self._actor_optimizer = tf.keras.optimizers.Adam(lr=self._config.pi_lr)
         self._critic_optimizer = tf.keras.optimizers.Adam(lr=self._config.vf_lr)
+        self._writer = writer
+        self._step = 0
 
     def predict_value(self, states: np.ndarray) -> np.ndarray:
         return self._tf_predict_value(states).numpy()
@@ -55,6 +58,8 @@ class PPOAgent(object):
             returns: Types.Tensor,
             logp_old: Types.Tensor
     ) -> None:
+        pi_loss_old, value_loss_old, _, _, _ = self._tf_stats(obs, actions, advantages, returns, logp_old)
+
         for i in range(self._config.train_pi_iters):
             kl = self.tf_train_actor(obs, actions, advantages, logp_old).numpy()
             if kl > 1.5 * self._config.target_kl:
@@ -64,7 +69,23 @@ class PPOAgent(object):
         for _ in range(self._config.train_v_iters):
             self.tf_train_critic(obs, returns)
 
-        #TODO logging: entropy, kl, ClipFrac, DeltaLossPi, DeltaLossV, LossPi, LossV
+        pi_loss, value_loss, kl, approx_ent, clipfrac = self._tf_stats(obs, actions, advantages, returns, logp_old)
+        delta_pi_loss = pi_loss - pi_loss_old
+        delta_value_loss = value_loss - value_loss_old
+
+        with self._writer.as_default():
+            tf.summary.scalar("pi_loss", pi_loss, step=self._step)
+            tf.summary.scalar("value_loss", value_loss, step=self._step)
+            tf.summary.scalar("delta_pi_loss", delta_pi_loss, step=self._step)
+            tf.summary.scalar("delta_value_loss", delta_value_loss, step=self._step)
+            tf.summary.scalar("kl", kl, step=self._step)
+            tf.summary.scalar("approx_ent", approx_ent, step=self._step)
+            tf.summary.scalar("clipfrac", clipfrac, step=self._step)
+        self._writer.flush()
+        self._step += 1
+
+
+
 
     @cast(Types.Function, tf.function)
     def tf_train_actor(
@@ -145,6 +166,30 @@ class PPOAgent(object):
         value_loss = tf.reduce_mean((returns - values) ** 2)
 
         return value_loss
+
+    def _tf_stats(
+            self,
+            obs: Types.Tensor,
+            actions: Types.Tensor,
+            advantages: Types.Tensor,
+            returns: Types.Tensor,
+            logp_old: Types.Tensor,
+    ) -> Tuple[Types.Tensor, Types.Tensor, Types.Tensor, Types.Tensor, Types.Tensor,]:
+        base = self._base_model(obs)
+        logits = self._actor_model(base)
+        values = self._value_model(base)
+        log_p = tf.squeeze(self.log_p_per_actions(logits, actions))
+
+        pi_loss = self.pi_loss_function(log_p, advantages, logp_old)
+        value_loss = self.value_loss_function(values, returns)
+        kl = self.approx_kl(logp_old, log_p)
+        approx_ent = tf.reduce_mean(-log_p)
+        ratio = tf.exp(log_p - logp_old)
+        clipped = tf.logical_or(ratio > (1 + self._config.clip_ratio), ratio < (1 - self._config.clip_ratio))
+        clipfrac = tf.reduce_mean(tf.cast(clipped, tf.float32))
+
+        return pi_loss, value_loss, kl, approx_ent, clipfrac
+
 
 
 class Config(object):

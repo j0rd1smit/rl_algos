@@ -14,12 +14,14 @@ class PPO(object):
             agent: PPOAgent,
             buffer: PPOBuffer,
             env: gym.Env,
+            writer: tf.summary.SummaryWriter,
             render: bool = False
     ) -> None:
         self._config = config
         self._agent = agent
         self._buffer = buffer
         self._env = env
+        self._writer = writer
         self._render = render
 
     def train(self, epochs: int) -> None:
@@ -53,6 +55,12 @@ class PPO(object):
             print("")
             print(f"avg episode reward: {reward_metric.result().numpy()}")
             print(f"avg episode length: {eps_len_metric.result().numpy()}")
+            with self._writer.as_default():
+                tf.summary.scalar("avg_episode_reward", reward_metric.result(), step=epoch)
+                tf.summary.scalar("avg_episode_reward", eps_len_metric.result(), step=epoch)
+            
+            
+            
             reward_metric.reset_states()
             eps_len_metric.reset_states()
             obs, actions, advantage, returns, logp_old = self._buffer.get()
@@ -64,11 +72,6 @@ class PPO(object):
                     a, _, _ = self._agent.select_actions(np.array([o]))
                     o, r, d, _ = self._env.step(a[0][0])
                 o, r, d, ep_ret, ep_len = self._env.reset(), 0, False, 0, 0
-
-            #TODO update
-            #TODO log progress
-
-
 
 
 class PPOConfig(object):
