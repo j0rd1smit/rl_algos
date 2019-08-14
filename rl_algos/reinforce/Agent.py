@@ -3,7 +3,7 @@ from typing import cast, Optional
 import numpy as np
 import tensorflow as tf
 
-from rl_algos.utils.type_utils import TfFunctionType
+from rl_algos.utils.Types import Function
 
 
 class Agent(object):
@@ -25,7 +25,7 @@ class Agent(object):
     def select_action(self, obs: np.ndarray) -> np.ndarray:
         return self._select_action(obs).numpy()
 
-    @cast(TfFunctionType, tf.function)
+    @cast(Function, tf.function)
     def _select_action(self, obs: np.ndarray) -> tf.Tensor:
         base = self.base_model(obs)
         pi = self.policy_model(base)
@@ -34,7 +34,7 @@ class Agent(object):
     def training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
         self._training_step(states, actions, returns)
 
-    @cast(TfFunctionType, tf.function)
+    @cast(Function, tf.function)
     def _training_step(self, states: np.ndarray, actions: np.ndarray, returns: np.ndarray) -> None:
         if self.config.base_line:
             returns = returns - tf.reduce_mean(returns)

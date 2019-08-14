@@ -3,7 +3,7 @@ from typing import cast
 import numpy as np
 import tensorflow as tf
 
-from rl_algos.utils.type_utils import Tensor, TfFunctionType
+from rl_algos.utils.Types import Tensor, Function
 
 
 class Agent(object):
@@ -24,13 +24,13 @@ class Agent(object):
     def select_actions(self, states: np.ndarray) -> np.ndarray:
         return self._tf_select_action(states).numpy()
 
-    @cast(TfFunctionType, tf.function)
+    @cast(Function, tf.function)
     def _tf_select_action(self, states: np.ndarray) -> tf.Tensor:
         _, policy = self.model(states)
         actions = tf.random.categorical(policy, 1)
         return tf.cast(actions, tf.int32)
 
-    @cast(TfFunctionType, tf.function)
+    @cast(Function, tf.function)
     def training_step(self, states: Tensor, rewards: Tensor, actions: Tensor, dones: Tensor, next_states: Tensor) -> None:
         actions = tf.squeeze(actions)
         rewards = tf.expand_dims(rewards, axis=-1)
