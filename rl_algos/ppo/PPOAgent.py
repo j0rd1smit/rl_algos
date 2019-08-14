@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import List, Set, Dict, Tuple, Optional, Union, Any, cast
-import tensorflow as tf
-import numpy as np
+from typing import cast, Tuple
 
-import rl_algos.utils.Types as Types
+import numpy as np
+import tensorflow as tf
+
 import rl_algos.utils.core as core
+import rl_algos.utils.Types as Types
 
 
 class PPOAgent(object):
@@ -77,7 +77,7 @@ class PPOAgent(object):
         with tf.GradientTape() as tape:
             base = self._base_model(obs)
             logits = self._actor_model(base)
-            log_p = self.log_p_per_actions(logits, actions)
+            log_p = tf.squeeze(self.log_p_per_actions(logits, actions))
             pi_loss = self.pi_loss_function(log_p, advantages, logp_old)
 
         variables = self._base_model.trainable_variables + self._actor_model.trainable_variables
@@ -101,9 +101,13 @@ class PPOAgent(object):
             advantages: tf.Tensor,
             logp_old: tf.Tensor
     ) -> tf.Tensor:
+        core.assert_same_shape(logp, logp_old)
+        core.assert_same_shape(logp, advantages)
+
         clip_ratio = self._config.clip_ratio
         ratio = tf.exp(logp - logp_old)
-        min_adv = tf.where(advantages > 0, (1 + clip_ratio) * advantages, (1 - clip_ratio) * advantages)
+        # noinspection PyTypeChecker
+        min_adv = tf.where(advantages >= 0, (1 + clip_ratio) * advantages, (1 - clip_ratio) * advantages)
         pi_loss = -tf.reduce_mean(tf.minimum(ratio * advantages, min_adv))
         return pi_loss
 
@@ -112,6 +116,7 @@ class PPOAgent(object):
             logp_old: tf.Tensor,
             logp: tf.Tensor,
     ) -> tf.Tensor:
+        core.assert_same_shape(logp_old, logp_old)
         return tf.reduce_mean(logp_old - logp)
 
     @cast(Types.Function, tf.function)
@@ -134,6 +139,9 @@ class PPOAgent(object):
             values: tf.Tensor,
             returns: tf.Tensor
     ) -> tf.Tensor:
+        if len(values.shape) > 1:
+            values = tf.squeeze(values)
+        core.assert_same_shape(values, returns)
         value_loss = tf.reduce_mean((returns - values) ** 2)
 
         return value_loss
@@ -147,7 +155,7 @@ class Config(object):
         self.vf_lr = 1e-3
         self.train_pi_iters = 80
         self.train_v_iters = 80
-        self.clip_ratio = 0.2
-        self.target_kl = 0.01
+        self.clip_ratio = 0.1
+        self.target_kl = 0.005
         self.tf_int = tf.int32
         self.tf_float = tf.float32

@@ -2,9 +2,8 @@ from typing import Tuple
 
 import gym
 import tensorflow as tf
-import numpy as np
 
-from rl_algos.ppo.PPO import PPOConfig, PPO
+from rl_algos.ppo.PPO import PPO, PPOConfig
 from rl_algos.ppo.PPOAgent import Config, PPOAgent
 from rl_algos.ppo.PPOBuffer import PPOBuffer
 
@@ -38,7 +37,7 @@ def main() -> None:
     critic = critic_network(base_output_shape)
 
     agent = PPOAgent(base, actor, critic, agent_config)
-    ppo = PPO(ppo_config, agent, bufffer, env)
+    ppo = PPO(ppo_config, agent, bufffer, env, render=True)
 
     ppo.train(epochs)
 

@@ -1,13 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import List, Set, Dict, Tuple, Optional, Union, Any, cast
-
+import gym
+import numpy as np
+import tensorflow as tf
 from tqdm import trange
 
 from rl_algos.ppo.PPOAgent import PPOAgent
 from rl_algos.ppo.PPOBuffer import PPOBuffer
-import gym
-import numpy as np
-import tensorflow as tf
 
 
 class PPO(object):
@@ -16,12 +13,14 @@ class PPO(object):
             config: "PPOConfig",
             agent: PPOAgent,
             buffer: PPOBuffer,
-            env: gym.Env
+            env: gym.Env,
+            render: bool = False
     ) -> None:
         self._config = config
         self._agent = agent
         self._buffer = buffer
         self._env = env
+        self._render = render
 
     def train(self, epochs: int) -> None:
         o, r, d, ep_ret, ep_len = self._env.reset(), 0, False, 0, 0
@@ -58,6 +57,14 @@ class PPO(object):
             eps_len_metric.reset_states()
             obs, actions, advantage, returns, logp_old = self._buffer.get()
             self._agent.train(obs, actions, advantage, returns, logp_old)
+
+            if self._render:
+                while not d:
+                    self._env.render()
+                    a, _, _ = self._agent.select_actions(np.array([o]))
+                    o, r, d, _ = self._env.step(a[0][0])
+                o, r, d, ep_ret, ep_len = self._env.reset(), 0, False, 0, 0
+
             #TODO update
             #TODO log progress
 

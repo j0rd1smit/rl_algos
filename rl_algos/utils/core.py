@@ -1,15 +1,16 @@
-from typing import Tuple, Optional, Union, Iterable
+from typing import Iterable, Optional, Tuple, Union
+
 import numpy as np
 import scipy.signal
 import tensorflow as tf
 
 
-def combined_shape(length: int, shape: Optional[Iterable[int]] = None) -> Tuple[int]:
+def combined_shape(length: int, shape: Optional[Iterable[int]] = None) -> Iterable[int]:
     if shape is None:
         return (length,)
 
-    # noinspection PyTypeChecker
-    return (length, shape) if np.isscalar(shape) else (length, *shape)
+    # noinspection PyTypeChecker,Mypy
+    return (length, shape) if np.isscalar(shape) else (length, *shape)  # type: ignore
 
 
 def discount_cumsum(x: np.ndarray, discount: Union[float, int]) -> np.ndarray:
@@ -35,3 +36,7 @@ def select_value_per_action(values: tf.Tensor, actions: tf.Tensor) -> tf.Tensor:
     indices = tf.stack([row_indices, actions], axis=-1)
 
     return tf.gather_nd(values, indices)
+
+
+def assert_same_shape(t1: tf.Tensor, t2: tf.Tensor) -> None:
+    assert t1.shape == t2.shape, f"Shape mismatch {t1.shape} != {t2.shape} but expected same shape"
