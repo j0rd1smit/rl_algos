@@ -60,14 +60,16 @@ class PPOAgent(object):
     ) -> None:
         pi_loss_old, value_loss_old, _, _, _ = self._tf_stats(obs, actions, advantages, returns, logp_old)
 
+        for _ in range(self._config.train_v_iters):
+            self.tf_train_critic(obs, returns)
+
         for i in range(self._config.train_pi_iters):
             kl = self.tf_train_actor(obs, actions, advantages, logp_old).numpy()
             if kl > 1.5 * self._config.target_kl:
                 print(f"Breaked pi training at {i}/{self._config.train_pi_iters}  with kl={kl}")
                 break
 
-        for _ in range(self._config.train_v_iters):
-            self.tf_train_critic(obs, returns)
+
 
         pi_loss, value_loss, kl, approx_ent, clipfrac = self._tf_stats(obs, actions, advantages, returns, logp_old)
         delta_pi_loss = pi_loss - pi_loss_old
@@ -147,7 +149,7 @@ class PPOAgent(object):
             returns: Types.Tensor,
     ) -> None:
         with tf.GradientTape() as tape:
-            base = self._base_model(obs)
+            base = tf.stop_gradient(self._base_model(obs))
             values = self._value_model(base)
             value_loss = self.value_loss_function(values, returns)
 

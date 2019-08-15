@@ -1,3 +1,4 @@
+import datetime
 from typing import Tuple
 
 import gym
@@ -27,7 +28,8 @@ def main() -> None:
     n_actions = env.action_space.n
     action_shape = (1, )
 
-    writer = tf.summary.create_file_writer("./tmp/ppo")
+    timestamp = str(datetime.datetime.now()).replace(":", " ").replace(".", " ")
+    writer = tf.summary.create_file_writer(f"./tmp/ppo/{timestamp}")
 
 
 
