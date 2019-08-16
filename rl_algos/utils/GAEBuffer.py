@@ -1,9 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import List, Set, Dict, Tuple, Optional, Union, Any, cast
-import rl_algos.utils.core as core
+from typing import Tuple, Union
+
 import numpy as np
 
-class PPOBuffer(object):
+import rl_algos.utils.core as core
+
+
+class GAEBuffer(object):
     def __init__(
             self,
             obs_dim: Tuple[int],

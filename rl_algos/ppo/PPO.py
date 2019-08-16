@@ -4,7 +4,7 @@ import tensorflow as tf
 from tqdm import trange
 
 from rl_algos.ppo.PPOAgent import PPOAgent
-from rl_algos.ppo.PPOBuffer import PPOBuffer
+from rl_algos.utils.GAEBuffer import GAEBuffer
 
 
 class PPO(object):
@@ -12,7 +12,7 @@ class PPO(object):
             self,
             config: "PPOConfig",
             agent: PPOAgent,
-            buffer: PPOBuffer,
+            buffer: GAEBuffer,
             env: gym.Env,
             writer: tf.summary.SummaryWriter,
             render: bool = False

@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from rl_algos.ppo.PPO import PPO, PPOConfig
 from rl_algos.ppo.PPOAgent import Config, PPOAgent
-from rl_algos.ppo.PPOBuffer import PPOBuffer
+from rl_algos.utils.GAEBuffer import GAEBuffer
 
 
 def main() -> None:
@@ -31,9 +31,7 @@ def main() -> None:
     timestamp = str(datetime.datetime.now()).replace(":", " ").replace(".", " ")
     writer = tf.summary.create_file_writer(f"./tmp/ppo/{timestamp}")
 
-
-
-    bufffer = PPOBuffer(env_shape, action_shape, gamma, lamd, buffer_size)
+    bufffer = GAEBuffer(env_shape, action_shape, gamma, lamd, buffer_size)
 
     base = base_network(env_shape)
     base_output_shape = base.output_shape[1:]
