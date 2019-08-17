@@ -23,47 +23,54 @@ class DDPG(object):
         self._config = config
         self._writer = writer
 
-        self._steps = 0
-
-    def train(self, steps: int) -> None:
-        print("starting training")
-        s, episode_returns, episode_len = self._env.reset(), 0, 0
+    def run(self) -> None:
         q_loss_metric = tf.keras.metrics.Mean("q_loss")
         pi_loss_metric = tf.keras.metrics.Mean("pi_loss")
-        for i in trange(steps):
-            a = self._agent.get_action(np.array([s]), noise_scale=self._config.noise_scale)[0]
 
-            next_s, r, d, _ = self._env.step(a)
-            r = r * self._config.reward_scaling
-            episode_returns += r
-            episode_len += 1
+        o, r, d, ep_ret, ep_len = self._env.reset(), 0.0, False, 0.0, 0
 
-            d = episode_len == self._config.max_len_episode or d
+        for t in trange(self._config.steps + self._config.warmup_steps):
+            if t > self._config.warmup_steps:
+                a = self._agent.select_action(np.array([o]), noise_scale=self._config.act_noise)[0]
+            else:
+                a = self._env.action_space.sample()
 
-            self._buffer.store(s, a, r, next_s, d)
-            s = next_s
-            
+            o2, r, d, _ = self._env.step(a)
+            ep_ret += r
+            ep_len += 1
 
-            if d:
-                for _ in range(episode_len):
+            d = False if ep_len == self._config.max_ep_len else d
+
+            r = r * self._config.reward_scaling_factor
+            self._buffer.store(o, a, r, o2, d)
+            o = o2
+
+            if d or (ep_len == self._config.max_ep_len):
+                for j in range(ep_len):
                     states, actions, rewards, next_states, dones = self._buffer.sample_batch(self._config.batch_size)
+
                     q_loss = self._agent.train_q(states, actions, rewards, next_states, dones)
+                    q_loss_metric(q_loss)
+                    step = t - ep_len + j
+                    with self._writer.as_default():
+                        tf.summary.scalar("q_loss_metric", q_loss, step=step)
+
+
                     pi_loss = self._agent.train_pi(states)
                     self._agent.update_target()
-                    q_loss_metric(q_loss)
+                    with self._writer.as_default():
+                        tf.summary.scalar("pi_loss_metric", pi_loss, step=step)
                     pi_loss_metric(pi_loss)
 
-
-                # TODO logging results
-                print(f"returns: {episode_returns}")
-                print(f"episode_len: {episode_len}")
-                self._steps += 1
                 with self._writer.as_default():
-                    tf.summary.scalar("q_loss_metric", q_loss_metric.result(), step=self._steps)
-                    tf.summary.scalar("pi_loss_metric", pi_loss_metric.result(), step=self._steps)
-                    tf.summary.scalar("episode_returns", episode_returns, step=self._steps)
-                    tf.summary.scalar("episode_len", episode_len, step=self._steps)
+                    # tf.summary.scalar("q_loss_metric", q_loss_metric.result(), step=t)
+                    # tf.summary.scalar("pi_loss_metric", pi_loss_metric.result(), step=t)
+                    tf.summary.scalar("episode_returns", ep_ret, step=t)
+                    tf.summary.scalar("episode_len", ep_len, step=t)
 
-                s, episode_returns, episode_len = self._env.reset(), 0, 0
+                print(f"returns: {ep_ret}")
+                print(f"episode_len: {ep_len}")
+
+                o, r, d, ep_ret, ep_len = self._env.reset(), 0, False, 0, 0
                 q_loss_metric.reset_states()
                 pi_loss_metric.reset_states()

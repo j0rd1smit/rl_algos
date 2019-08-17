@@ -24,9 +24,7 @@ class DDPGAgent(object):
         self._optimizer_pi = tf.keras.optimizers.Adam(lr=config.lr_pi)
         self._optimizer_q = tf.keras.optimizers.Adam(lr=config.lr_q)
 
-
-
-    def get_action(
+    def select_action(
             self,
             states: np.ndarray,
             noise_scale: float = 0.0

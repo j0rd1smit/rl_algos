@@ -18,7 +18,7 @@ def main() -> None:
     print(env.action_space.low)
     print(env.action_space.high)
 
-    config.reward_scaling = 1.0
+    config.reward_scaling_factor = 1.0
 
 
     model = _model(config)
@@ -34,8 +34,7 @@ def main() -> None:
     agent = DDPGAgent(model, target, config, writer)
     ddpg = DDPG(env, agent, buffer, config, writer)
 
-
-    ddpg.train(100_000)
+    ddpg.run()
 
 
 def _model(config: DDPGConfig) -> DDPGModel:
@@ -45,7 +44,7 @@ def _model(config: DDPGConfig) -> DDPGModel:
 def _pi_model(config: DDPGConfig) -> tf.keras.Model:
     inputs = tf.keras.layers.Input(config.observation_space.shape)
     outputs = inputs
-    for _ in range(3):
+    for _ in range(4):
         outputs = tf.keras.layers.Dense(32, activation="relu")(outputs)
 
     outputs = config.action_space.high * tf.keras.layers.Dense(sum(config.action_space.shape), activation="tanh")(outputs)
@@ -58,7 +57,7 @@ def _q_model(config: DDPGConfig) -> tf.keras.Model:
     inputs = tf.keras.layers.Input(shape)
 
     outputs = inputs
-    for _ in range(3):
+    for _ in range(4):
         outputs = tf.keras.layers.Dense(32, activation="tanh")(outputs)
     outputs = tf.keras.layers.Dense(1, activation="linear")(outputs)
 
