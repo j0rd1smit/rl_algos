@@ -40,3 +40,11 @@ def select_value_per_action(values: tf.Tensor, actions: tf.Tensor) -> tf.Tensor:
 
 def assert_same_shape(t1: tf.Tensor, t2: tf.Tensor) -> None:
     assert t1.shape == t2.shape, f"Shape mismatch {t1.shape} != {t2.shape} but expected same shape"
+
+
+def polyak_avg_vars(polyak: float, main: tf.keras.Model, target: tf.keras.Model) -> None:
+    assert len(main.trainable_variables) == len(target.trainable_variables)
+
+    for v_main, v_targ in zip(main.trainable_variables, target.trainable_variables):
+        updated_value = polyak * v_targ + (1.0 - polyak) * v_main
+        v_targ.assign(updated_value)

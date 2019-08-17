@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 
 import rl_algos.utils.Types as Types
-from rl_algos.DDPG.DDPGConfig import DDPGConfig
-from rl_algos.DDPG.DDPGModel import DDPGModel
+from rl_algos.ddpg.DDPGConfig import DDPGConfig
+from rl_algos.ddpg.DDPGModel import DDPGModel
 
 
 class DDPGAgent(object):

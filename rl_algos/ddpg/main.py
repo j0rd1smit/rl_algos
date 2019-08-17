@@ -1,14 +1,14 @@
 import datetime
 
 import gym
+import numpy as np
 import tensorflow as tf
 
-from rl_algos.DDPG.DDPG import DDPG
-from rl_algos.DDPG.DDPGAgent import DDPGAgent
-from rl_algos.DDPG.DDPGConfig import DDPGConfig
-from rl_algos.DDPG.DDPGModel import DDPGModel
-from rl_algos.DDPG.ReplayBuffer import ReplayBuffer
-import numpy as np
+from rl_algos.ddpg.DDPG import DDPG
+from rl_algos.ddpg.DDPGAgent import DDPGAgent
+from rl_algos.ddpg.DDPGConfig import DDPGConfig
+from rl_algos.ddpg.DDPGModel import DDPGModel
+from rl_algos.utils.ReplayBuffer import ReplayBuffer
 
 
 def main() -> None:
@@ -29,7 +29,7 @@ def main() -> None:
     writer = tf.summary.create_file_writer(f"./tmp/ddpg/{timestamp}")
 
     size = int(1e6)
-    buffer = ReplayBuffer(env.observation_space.shape, env.action_space.shape, size)
+    buffer = ReplayBuffer(env.observation_space.shape[0], env.action_space.shape[0], size)
 
     agent = DDPGAgent(model, target, config, writer)
     ddpg = DDPG(env, agent, buffer, config, writer)
@@ -59,7 +59,7 @@ def _q_model(config: DDPGConfig) -> tf.keras.Model:
 
     outputs = inputs
     for _ in range(3):
-        outputs = tf.keras.layers.Dense(32, activation="relu")(outputs)
+        outputs = tf.keras.layers.Dense(32, activation="tanh")(outputs)
     outputs = tf.keras.layers.Dense(1, activation="linear")(outputs)
 
     return tf.keras.Model(inputs=inputs, outputs=outputs)

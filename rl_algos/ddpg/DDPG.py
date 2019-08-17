@@ -1,11 +1,12 @@
 import gym
+import numpy as np
+import tensorflow as tf
 from tqdm import trange
 
-from rl_algos.DDPG.DDPGAgent import DDPGAgent
-from rl_algos.DDPG.DDPGConfig import DDPGConfig
-from rl_algos.DDPG.ReplayBuffer import ReplayBuffer
-import tensorflow as tf
-import numpy as np
+from rl_algos.ddpg.DDPGAgent import DDPGAgent
+from rl_algos.ddpg.DDPGConfig import DDPGConfig
+from rl_algos.utils.ReplayBuffer import ReplayBuffer
+
 
 class DDPG(object):
     def __init__(

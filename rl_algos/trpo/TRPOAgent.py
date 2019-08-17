@@ -1,9 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import List, Set, Dict, Tuple, Optional, Union, Any, cast
+from typing import Tuple
+
 import tensorflow as tf
-import numpy as np
+
 import rl_algos.utils.core as core
 from rl_algos.trpo.TRPOConfig import TRPOConfig
+
 
 def _logp(logits: tf.Tensor) -> tf.Tensor:
     return tf.nn.log_softmax(logits)
@@ -23,12 +24,6 @@ def _value_loss(value: tf.Tensor, returns: tf.Tensor) -> tf.Tensor:
     core.assert_same_shape(value, returns)
     return tf.reduce_mean((value - returns) ** 2) #TODO Try hubert loss
 
-def _hessian_vector_product(
-        self,
-        f: tf.Tensor,
-        param
-    ) -> None:
-    pass
 
 def _categorical_kl(
         logp0: tf.Tensor,

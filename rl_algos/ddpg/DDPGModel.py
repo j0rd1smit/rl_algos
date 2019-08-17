@@ -2,6 +2,8 @@ from typing import Any
 
 import tensorflow as tf
 
+import rl_algos.utils.core as core
+
 
 class DDPGModel(object):
     def __init__(
@@ -42,13 +44,5 @@ class DDPGModel(object):
         return self.q(states, actions=pi)
 
     def update(self, polyak: float, other: "DDPGModel") -> None:
-        polyak_avg_vars(polyak, other._pi_model, self._pi_model)
-        polyak_avg_vars(polyak, other._q_model, self._q_model)
-
-
-def polyak_avg_vars(polyak: float, main: tf.keras.Model, target: tf.keras.Model) -> None:
-    assert len(main.trainable_variables) == len(target.trainable_variables)
-
-    for v_main, v_targ in zip(main.trainable_variables, target.trainable_variables):
-        updated_value = polyak * v_targ + (1.0 - polyak) * v_main
-        v_targ.assign(updated_value)
+        core.polyak_avg_vars(polyak, other._pi_model, self._pi_model)
+        core.polyak_avg_vars(polyak, other._q_model, self._q_model)

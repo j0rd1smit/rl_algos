@@ -1,6 +1,5 @@
-import numpy as np
+import gym
 
 if __name__ == '__main__':
-    a = np.array([0.1, 0.2])
-    if a == 0.2:
-        print("hello")
+    env = gym.make("Pendulum-v0")
+    print(env.action_space)
