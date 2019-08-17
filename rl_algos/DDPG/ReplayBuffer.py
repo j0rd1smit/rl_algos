@@ -14,7 +14,7 @@ class ReplayBuffer(object):
 
     ) -> None:
         self.state_buf = np.zeros(core.combined_shape(size, obs_dim), dtype=np.float32)
-        self.action_buf = np.zeros(core.combined_shape(size, act_dim), dtype=np.int32)
+        self.action_buf = np.zeros(core.combined_shape(size, act_dim), dtype=np.float32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.state_next_buf = np.zeros(core.combined_shape(size, obs_dim), dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
@@ -37,10 +37,16 @@ class ReplayBuffer(object):
         self.state_next_buf[self.ptr] = next_state
         self.done_buf[self.ptr] = done
 
+
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
     def sample_batch(self, batch_size: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        idxs = np.random.randint(0, self.size, size=batch_size)
+        idxs = np.random.randint(0, self.size, size=min(self.size, batch_size))
 
-        return self.state_next_buf[idxs], self.action_buf[idxs], self.rewards_buf[idxs], self.state_next_buf[idxs], self.done_buf[idxs]
+
+        return self.state_buf[idxs], \
+               self.action_buf[idxs], \
+               self.rewards_buf[idxs], \
+               self.state_next_buf[idxs], \
+               self.done_buf[idxs]

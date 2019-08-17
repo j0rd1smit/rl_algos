@@ -39,8 +39,7 @@ class DDPGModel(object):
             states: tf.Tensor,
     ) -> tf.Tensor:
         pi = self.pi(states)
-        inputs = tf.concat([states, pi], axis=-1)
-        return self._q_model(inputs)
+        return self.q(states, actions=pi)
 
     def update(self, polyak: float, other: "DDPGModel") -> None:
         polyak_avg_vars(polyak, other._pi_model, self._pi_model)
@@ -51,5 +50,5 @@ def polyak_avg_vars(polyak: float, main: tf.keras.Model, target: tf.keras.Model)
     assert len(main.trainable_variables) == len(target.trainable_variables)
 
     for v_main, v_targ in zip(main.trainable_variables, target.trainable_variables):
-        updated_value = polyak * v_targ + (1 - polyak) * v_main
+        updated_value = polyak * v_targ + (1.0 - polyak) * v_main
         v_targ.assign(updated_value)
