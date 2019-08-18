@@ -34,9 +34,11 @@ class PPO(object):
         for epoch in trange(epochs):
             for t in range(self._config.steps_per_epoch):
                 a, v_t, logp_t = self._agent.select_actions(np.array([o]))
-                self._buffer.store(o, a[0], r, v_t[0], logp_t[0])
 
-                o, r, d, _ = self._env.step(a[0][0])
+
+                o_next, r, d, _ = self._env.step(a[0][0])
+                self._buffer.store(o, a[0], r, v_t[0], logp_t[0])
+                o = o_next
                 ep_ret += r
                 ep_len += 1
 

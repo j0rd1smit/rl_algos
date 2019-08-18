@@ -1,5 +1,6 @@
 from typing import Iterable, Optional, Tuple, Union
 
+import math
 import numpy as np
 import scipy.signal
 import tensorflow as tf
@@ -48,3 +49,41 @@ def polyak_avg_vars(polyak: float, main: tf.keras.Model, target: tf.keras.Model)
     for v_main, v_targ in zip(main.trainable_variables, target.trainable_variables):
         updated_value = polyak * v_targ + (1.0 - polyak) * v_main
         v_targ.assign(updated_value)
+
+
+def categorical_policy(
+        logits: tf.Tensor,
+        actions: tf.Tensor
+) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    logp_all = tf.nn.log_softmax(logits)
+    pi = tf.cast(tf.squeeze(tf.random.categorical(logits, 1), axis=1), tf.int32)
+    logp = select_value_per_action(logp_all, actions)
+    logp_pi = select_value_per_action(logp_all, pi)
+
+    return pi, logp, logp_pi
+
+
+def gaussian_policy(
+        mu: tf.Tensor,
+        log_std: tf.Tensor,
+        actions: tf.Tensor,
+) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    std = tf.exp(log_std)
+
+    pi = mu + tf.random.normal(mu.shape) * std
+    logp = _gaussian_likelihood(actions, mu, log_std)
+    logp_pi = _gaussian_likelihood(pi, mu, log_std)
+
+    return pi, logp, logp_pi
+
+
+def _gaussian_likelihood(
+        x: tf.Tensor,
+        mu: tf.Tensor,
+        log_std: tf.Tensor,
+        eps: float = 1e-8
+) -> tf.Tensor:
+    # noinspection PyTypeChecker
+    pre_sum = -0.5 * (((x - mu) / (tf.exp(log_std) + eps)) ** 2.0 + 2.0 * log_std + math.log(2.0 * math.pi))
+
+    return tf.reduce_mean(pre_sum, axis=-1)
