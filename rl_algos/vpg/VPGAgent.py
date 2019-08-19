@@ -6,16 +6,12 @@ import tensorflow as tf
 import rl_algos.utils.Types as Types
 
 
-
-PolicyFunction = Callable[[tf.Tensor, tf.Tensor], Tuple[tf.Tensor, tf.Tensor, tf.Tensor]]
-
-
 class VPGAgent(object):
     def __init__(
             self,
             pi_model: tf.keras.Model,
             v_model: tf.keras.Model,
-            policy_function: PolicyFunction,
+            policy_function: Types.PolicyFunction,
             config: VPGConfig,
     ) -> None:
         self._pi_model = pi_model

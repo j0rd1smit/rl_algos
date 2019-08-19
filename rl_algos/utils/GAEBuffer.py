@@ -34,8 +34,8 @@ class GAEBuffer(object):
             obs: np.ndarray,
             action: Union[int, np.ndarray],
             reward: Union[float, np.ndarray],
-            value: float,
-            logp: float,
+            value: Union[float, np.ndarray],
+            logp: Union[float, np.ndarray],
     ) -> None:
         assert self.ptr < self.max_size,  "Buffer is out of room to store more"
         self.obs_buf[self.ptr] = obs

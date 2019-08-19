@@ -13,12 +13,14 @@ import rl_algos.utils.core as core
 
 def main() -> None:
     #env_name = "CartPole-v1"
-    env_name = "Pendulum-v0"
+    #env_name = "Pendulum-v0"
+    env_name = "LunarLanderContinuous-v2"
     env = gym.make(env_name)
 
     config = VPGConfig(env.observation_space, env.action_space)
     #policy = core.categorical_policy
     policy = gaussian_policy
+    config.reward_scaling_factor = 1.0 / 100
 
     pi_model = build_pi_model(config)
     v_model = build_v_model(config)
@@ -30,7 +32,7 @@ def main() -> None:
     vpg.run()
 
 def gaussian_policy(mu: tf.Tensor, actions: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
-    log_std = tf.zeros(shape=mu.shape) + 0.1
+    log_std = tf.zeros(shape=mu.shape) + 0.5
     return core.gaussian_policy(mu, log_std, actions)
 
 def build_pi_model(config: VPGConfig) -> tf.keras.Model:
@@ -42,7 +44,7 @@ def build_pi_model(config: VPGConfig) -> tf.keras.Model:
     if isinstance(config.action_space, Box):
         outputs = tf.keras.layers.Dense(sum(config.action_space.shape), activation="linear")(outputs)
     else:
-        outputs = tf.keras.layers.Dense(sum(config.action_space.n), activation="linear")(outputs)
+        outputs = tf.keras.layers.Dense(config.action_space.n, activation="linear")(outputs)
 
     return tf.keras.Model(inputs=inputs, outputs=outputs)
 

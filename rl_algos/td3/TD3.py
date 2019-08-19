@@ -36,12 +36,12 @@ class TD3(object):
                 a = self._env.action_space.sample()
 
             o2, r, d, _ = self._env.step(a)
+            r = r * self._config.reward_scaling_factor
             ep_ret += r
             ep_len += 1
 
             d = False if ep_len == self._config.max_ep_len else d
 
-            r = r * self._config.reward_scaling_factor
             self._buffer.store(o, a, r, o2, d)
             o = o2
 

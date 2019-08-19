@@ -6,6 +6,13 @@ import scipy.signal
 import tensorflow as tf
 
 
+def approx_kl(
+        logp_old: tf.Tensor,
+        logp: tf.Tensor,
+) -> tf.Tensor:
+    assert_same_shape(logp_old, logp_old)
+    return tf.reduce_mean(logp_old - logp)
+
 def combined_shape(length: int, shape: Optional[Iterable[int]] = None) -> Iterable[int]:
     if shape is None:
         return (length,)
@@ -40,7 +47,7 @@ def select_value_per_action(values: tf.Tensor, actions: tf.Tensor) -> tf.Tensor:
 
 
 def assert_same_shape(t1: tf.Tensor, t2: tf.Tensor) -> None:
-    assert t1.shape == t2.shape, f"Shape mismatch {t1.shape} != {t2.shape} but expected same shape"
+    tf.assert_equal(t1.shape, t2.shape, message=f"Shape mismatch {t1.shape} != {t2.shape} but expected same shape")
 
 
 def polyak_avg_vars(polyak: float, main: tf.keras.Model, target: tf.keras.Model) -> None:
