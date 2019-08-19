@@ -33,6 +33,7 @@ class VPG(object):
 
         for epoch in trange(self._config.epochs):
             for t in range(self._config.steps_per_epoch):
+                #self._env.render()
                 a, v_t, logp_t = self._agent.select_action(np.array([o]))
                 a = a.numpy()
                 v_t = v_t.numpy()

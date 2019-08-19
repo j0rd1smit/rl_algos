@@ -68,6 +68,7 @@ def gaussian_policy(
         log_std: tf.Tensor,
         actions: tf.Tensor,
 ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    actions = tf.cast(actions, tf.float32)
     std = tf.exp(log_std)
 
     pi = mu + tf.random.normal(mu.shape) * std

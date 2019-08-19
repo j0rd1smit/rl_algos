@@ -39,7 +39,8 @@ class VPGAgent(object):
             states: Types.Tensor
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         model_output = self._pi_model(states)
-        pi, _, logp_pi = self._policy_function(model_output, tf.zeros((model_output.shape[0],), dtype=tf.int32))
+        shape = (model_output.shape[0],) + self._config.action_space.shape
+        pi, _, logp_pi = self._policy_function(model_output, tf.zeros(shape, dtype=tf.int32))
         v = self._v_model(states)
 
         return pi, v, logp_pi
