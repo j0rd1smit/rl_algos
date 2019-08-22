@@ -79,13 +79,13 @@ def gaussian_policy(
     std = tf.exp(log_std)
 
     pi = mu + tf.random.normal(mu.shape) * std
-    logp = _gaussian_likelihood(actions, mu, log_std)
-    logp_pi = _gaussian_likelihood(pi, mu, log_std)
+    logp = gaussian_likelihood(actions, mu, log_std)
+    logp_pi = gaussian_likelihood(pi, mu, log_std)
 
     return pi, logp, logp_pi
 
 
-def _gaussian_likelihood(
+def gaussian_likelihood(
         x: tf.Tensor,
         mu: tf.Tensor,
         log_std: tf.Tensor,

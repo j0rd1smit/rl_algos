@@ -32,7 +32,6 @@ class PPO(object):
 
         for epoch in trange(self._config.epochs):
             for t in range(self._config.steps_per_epoch):
-                # self._env.render()
                 a, v_t, logp_t = self._agent.select_actions(np.array([o]))
 
                 self._buffer.store(o, a, r, v_t, logp_t)
@@ -57,7 +56,7 @@ class PPO(object):
             print(f"avg episode length: {eps_len_metric.result().numpy()}")
             with self._writer.as_default():
                 tf.summary.scalar("avg_episode_reward", reward_metric.result(), step=epoch)
-                tf.summary.scalar("avg_episode_reward", eps_len_metric.result(), step=epoch)
+                tf.summary.scalar("eps_len_metric", eps_len_metric.result(), step=epoch)
             reward_metric.reset_states()
             eps_len_metric.reset_states()
             self.update()

@@ -14,7 +14,7 @@ from rl_algos.utils.ReplayBuffer import ReplayBuffer
 def main() -> None:
     env_name, reward_scaling_factor, = "Pendulum-v0", 1.0 / 100
     #env_name, reward_scaling_factor = "MountainCarContinuous-v0", 1.0
-    #env_name, reward_scaling_factor = "LunarLanderContinuous-v2", 1.0/ 100
+    env_name, reward_scaling_factor = "LunarLanderContinuous-v2", 1.0 / 100
     env = gym.make(env_name)
     config = TD3Config(env.observation_space, env.action_space)
     config.reward_scaling_factor = reward_scaling_factor

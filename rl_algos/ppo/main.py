@@ -3,7 +3,6 @@ from typing import Tuple
 
 import gym
 import tensorflow as tf
-import numpy as np
 from gym.spaces import Box
 
 import rl_algos.utils.core as core
@@ -17,9 +16,9 @@ def main() -> None:
     #env_name, reward_scaling_factor, policy = "CartPole-v1", 1.0,  core.categorical_policy
     #env_name, reward_scaling_factor, policy = "Pendulum-v0", 1.0, gaussian_policy
     #env_name, reward_scaling_factor, policy = "MountainCarContinuous-v0", 1.0, gaussian_policy
-    #env_name, reward_scaling_factor, policy = "LunarLanderContinuous-v2", 1.0/ 100, gaussian_policy
+    env_name, reward_scaling_factor, policy = "LunarLanderContinuous-v2", 1.0 / 100, gaussian_policy
     #env_name, reward_scaling_factor, policy = "LunarLander-v2", 1.0/ 100, core.categorical_policy
-    env_name, reward_scaling_factor, policy = "BipedalWalker-v2", 1.0/ 100, gaussian_policy
+    # env_name, reward_scaling_factor, policy = "BipedalWalker-v2", 1.0, gaussian_policy
     env = gym.make(env_name)
 
     config = PPOConfig(env.observation_space, env.action_space)
