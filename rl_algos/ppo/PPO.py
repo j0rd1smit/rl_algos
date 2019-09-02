@@ -55,8 +55,8 @@ class PPO(object):
             print(f"avg episode reward: {reward_metric.result().numpy()}")
             print(f"avg episode length: {eps_len_metric.result().numpy()}")
             with self._writer.as_default():
-                tf.summary.scalar("avg_episode_reward", reward_metric.result(), step=epoch)
-                tf.summary.scalar("eps_len_metric", eps_len_metric.result(), step=epoch)
+                tf.summary.scalar("reward_training", reward_metric.result(), step=epoch)
+                tf.summary.scalar("eps_len_training", eps_len_metric.result(), step=epoch)
             reward_metric.reset_states()
             eps_len_metric.reset_states()
             self.update()

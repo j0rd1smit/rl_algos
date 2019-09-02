@@ -14,8 +14,8 @@ from rl_algos.utils.ReplayBuffer import ReplayBuffer
 def main() -> None:
     # env_name, reward_scaling_factor, = "Pendulum-v0", 1.0 / 100
     # env_name, reward_scaling_factor = "MountainCarContinuous-v0", 1.0
-    # env_name, reward_scaling_factor = "LunarLanderContinuous-v2", 1
-    env_name, reward_scaling_factor = "BipedalWalker-v2", 1
+    env_name, reward_scaling_factor = "LunarLanderContinuous-v2", 1
+    #env_name, reward_scaling_factor = "BipedalWalker-v2", 1
     env = gym.make(env_name)
     test_env = gym.make(env_name)
     config = SACConfig(env.observation_space, env.action_space)
@@ -41,8 +41,11 @@ def build_pi_model(config: SACConfig) -> tf.keras.Model:
     inputs = tf.keras.layers.Input(config.observation_space.shape)
     outputs = inputs
 
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.keras.layers.Dense(400, activation="relu")(outputs)
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.keras.layers.Dense(300, activation="relu")(outputs)
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
 
     mu = tf.keras.layers.Dense(sum(config.action_space.shape))(outputs)
     log_std = tf.keras.layers.Dense(sum(config.action_space.shape))(outputs)
@@ -55,8 +58,11 @@ def build_v_model(config: SACConfig) -> tf.keras.Model:
     inputs = tf.keras.layers.Input(shape)
 
     outputs = inputs
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.keras.layers.Dense(400, activation="relu")(outputs)
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.keras.layers.Dense(300, activation="relu")(outputs)
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.squeeze(tf.keras.layers.Dense(1, activation="linear")(outputs))
 
     return tf.keras.Model(inputs=inputs, outputs=outputs)
@@ -67,8 +73,11 @@ def build_q_model(config: SACConfig) -> tf.keras.Model:
     inputs = tf.keras.layers.Input(shape)
 
     outputs = inputs
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.keras.layers.Dense(400, activation="relu")(outputs)
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.keras.layers.Dense(300, activation="relu")(outputs)
+    outputs = tf.keras.layers.BatchNormalization()(outputs)
     outputs = tf.squeeze(tf.keras.layers.Dense(1, activation="linear")(outputs))
 
     return tf.keras.Model(inputs=inputs, outputs=outputs)

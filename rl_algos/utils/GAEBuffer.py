@@ -23,6 +23,9 @@ class GAEBuffer(object):
         self.val_buf = np.zeros(size, dtype=np.float32)
         self.logp_buf = np.zeros(size, dtype=np.float32)
 
+        for i in [self.obs_buf, self.act_buf, self.adv_buf, self.rew_buf, self.ret_buf, self.val_buf, self.logp_buf]:
+            print(i.shape)
+
         self.gamma = gamma
         self.lam = lam
         self.max_size = size
@@ -49,28 +52,55 @@ class GAEBuffer(object):
             self,
             last_val: float = 0.0,
     ) -> None:
-        path_slice = slice(self.path_start_idx, self.ptr)
-        rewards = np.append(self.rew_buf[path_slice], last_val)
-        values = np.append(self.val_buf[path_slice], last_val)
+        if self.path_start_idx == self.ptr:
+            print("equal")
+            return
+        try:
+            path_slice = slice(self.path_start_idx, self.ptr)
+            rewards = np.append(self.rew_buf[path_slice], last_val)
+            values = np.append(self.val_buf[path_slice], last_val)
 
-        # delta(v,t) = r_t + gamma * V(s_t_+_1) - V(s_t)
-        deltas = rewards[:-1] + self.gamma * values[1:] - values[:-1]
-        self.adv_buf[path_slice] = core.discount_cumsum(deltas, self.gamma * self.lam) #GAE-Kambda advantage
+            # delta(v,t) = r_t + gamma * V(s_t_+_1) - V(s_t)
+            deltas = rewards[:-1] + self.gamma * values[1:] - values[:-1]
+            #print(last_val)
+            #print(deltas.shape)
+            #print(self.adv_buf[path_slice].shape)
+            self.adv_buf[path_slice] = core.discount_cumsum(deltas, self.gamma * self.lam) #GAE-Kambda advantage
 
-        self.ret_buf[path_slice] = core.discount_cumsum(rewards, self.gamma)[:-1] # rewards-to-go targets value func
+            self.ret_buf[path_slice] = core.discount_cumsum(rewards, self.gamma)[:-1] # rewards-to-go targets value func
 
-        self.path_start_idx = self.ptr
+            self.path_start_idx = self.ptr
+        except Exception:
+            path_slice = slice(self.path_start_idx, self.ptr)
+            rewards = np.append(self.rew_buf[path_slice], last_val)
+            values = np.append(self.val_buf[path_slice], last_val)
+            deltas = rewards[:-1] + self.gamma * values[1:] - values[:-1]
+            print(self.path_start_idx, self.ptr)
+            print(path_slice)
+            print(rewards.shape)
+            print(values.shape)
+            print(deltas.shape)
+            print(core.discount_cumsum(deltas, self.gamma * self.lam).shape)
+            print(self.adv_buf[path_slice].shape)
+            print(self.adv_buf.shape, self.val_buf.shape, self.rew_buf.shape)
+            print(self.adv_buf)
+            raise Exception()
+
 
     def get(
             self
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        assert self.ptr == self.max_size, "Buffer is not yet full"
+        #assert self.ptr == self.max_size, "Buffer is not yet full"
+        adv_mean, adv_std = core.statistics_scalar(self.adv_buf[:self.ptr])
+        adv_buf = (self.adv_buf[:self.ptr] - adv_mean) / adv_std
+
         self.ptr = 0
         self.path_start_idx = 0
 
-        adv_mean, adv_std = core.statistics_scalar(self.adv_buf)
-        self.adv_buf = (self.adv_buf - adv_mean) / adv_std
+        return self.obs_buf[:self.ptr], self.act_buf[:self.ptr], adv_buf[:self.ptr], self.ret_buf[:self.ptr], self.logp_buf[:self.ptr]
 
-        return self.obs_buf, self.act_buf, self.adv_buf, self.ret_buf, self.logp_buf
+    @property
+    def size(self) -> int:
+        return self.ptr
 
 

@@ -86,9 +86,9 @@ class TD3Agent(object):
         q2_values = self._model.q2(states, actions)
 
         # noinspection PyTypeChecker
-        q1_loss = tf.reduce_mean((q1_values - bellman_backup) ** 2)
+        q1_loss = tf.keras.losses.Huber()(bellman_backup, q1_values) #tf.reduce_mean((q1_values - bellman_backup) ** 2)
         # noinspection PyTypeChecker
-        q2_loss = tf.reduce_mean((q2_values - bellman_backup) ** 2)
+        q2_loss =  tf.keras.losses.Huber()(bellman_backup, q2_values)  #tf.reduce_mean((q2_values - bellman_backup) ** 2)
 
         return q1_loss + q2_loss
 
