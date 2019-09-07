@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Set, Dict, Tuple, Optional, Union, Any, cast
 
 import gym
+import random
 import numpy as np
 
 
@@ -59,7 +60,7 @@ class TicTacToEnvSelfPlay(gym.Env):
         x = action // 3
         y = action % 3
 
-        if self._steps > 20:
+        if self._steps > 15:
             self._episode_ended = True
             return self.state, -10.0, True, {}
 
@@ -70,8 +71,8 @@ class TicTacToEnvSelfPlay(gym.Env):
         new_value = 1 if self._player_one_turn else -1
         self._state[x][y] = new_value
 
-
-        if self._game_has_ended(3):
+        winning_value = 3 if self._player_one_turn else -3
+        if self._game_has_ended(winning_value):
             return self.state, 1.0, True, {}
 
         if self._is_a_draw():
@@ -83,7 +84,7 @@ class TicTacToEnvSelfPlay(gym.Env):
 
     def reset(self):
         self._steps = 0
-        self._player_one_turn = True
+        self._player_one_turn = random.choice([True, False])
         self._state = np.zeros((3, 3), dtype=np.float32)
 
 

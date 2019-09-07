@@ -22,7 +22,7 @@ class PPOConfig(object):
 
         self.max_ep_len = 1000
         self.steps_per_epoch = 4000
-        self.epochs = 50
+        self.epochs = 500
 
         self.clip_ratio = 0.1
         self.target_kl = 0.005
