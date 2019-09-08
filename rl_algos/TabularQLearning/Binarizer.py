@@ -7,4 +7,4 @@ class Binarizer(ObservationWrapper):
         self._func = func
 
     def observation(self, state):
-        return self.func(state)
+        return self._func(state)

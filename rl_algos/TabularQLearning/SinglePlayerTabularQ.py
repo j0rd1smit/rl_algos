@@ -1,18 +1,24 @@
 
 import gym
 
+from rl_algos.envs.TicTacToEnv import TicTacToEnv
+from rl_algos.TabularQLearning.Binarizer import Binarizer
 from rl_algos.TabularQLearning.TabularQLearningAgent import TabularQLearningAgent
 
 if __name__ == '__main__':
-    env = gym.make("Taxi-v2")
+    def binarize(state):
+        res = tuple(state)
+        return res
+
+    env = Binarizer(TicTacToEnv(), binarize)
     print(env.action_space)
     print(env.observation_space)
-    possible_actions = [a for a in range(env.action_space.n)]
+    possible_actions = lambda s: [a for a in range(env.action_space.n)]
 
 
     agent = TabularQLearningAgent(possible_actions)
 
-    for eps in range(200):
+    for eps in range(10000):
         total_reward = 0.0
         s = env.reset()
         step = 0
@@ -24,7 +30,7 @@ if __name__ == '__main__':
             next_s, r, done, _ = env.step(a)
 
             # train (update) agent for state s
-            agent.train(s, a, r, next_s)
+            agent.train(s, a, r, next_s, done)
 
             s = next_s
             total_reward += r
@@ -34,6 +40,7 @@ if __name__ == '__main__':
 
 
         print(f"[{eps}] returns={total_reward} steps={step} eps={agent._eps}")
+        env.render()
 
     """
     returns = 0

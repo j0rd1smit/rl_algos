@@ -24,10 +24,25 @@ class TicTacToEnvSelfPlay(gym.Env):
     def player_one_turn(self):
         return self._player_one_turn
 
+    def valid_actions(self, state):
+        actions = []
+        for i in range(len(state)):
+            if state[i] == 0:
+                actions.append(i)
+        return actions
+
     @property
     def state(self):
         if self._player_one_turn:
             return self._state.copy().flatten()
+        return -1 * self._state.copy().flatten()
+
+    @property
+    def state_p1(self):
+        return self._state.copy().flatten()
+
+    @property
+    def state_p2(self):
         return -1 * self._state.copy().flatten()
 
     def valid_actions(self):
@@ -60,7 +75,7 @@ class TicTacToEnvSelfPlay(gym.Env):
         x = action // 3
         y = action % 3
 
-        if self._steps > 15:
+        if self._steps > 150:
             self._episode_ended = True
             return self.state, -10.0, True, {}
 
