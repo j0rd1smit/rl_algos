@@ -63,7 +63,7 @@ class PPO(object):
 
             o, r, d, ep_ret, ep_len = self._env.reset(), 0.0, False, 0.0, 0
             while not (d or (ep_len == self._config.max_ep_len)):
-                self._env.render()
+                #self._env.render()
                 a, _, _ = self._agent.select_actions(np.array([o]))
                 o, _, d, _ = self._env.step(a[0])
                 ep_len += 1
